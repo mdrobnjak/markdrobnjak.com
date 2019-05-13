@@ -1,5 +1,6 @@
 body
 {
+	font-family:Arial Black;
 	background-color: black;
 	margin:auto;
 }
@@ -8,6 +9,12 @@ body
 {
 	display:block;
 	margin:auto;
-	height: 100vh;
+	height: 90vh;
 	width: 100vw;
+}
+
+.topmenu{
+	height: 10vh;
+	width: 100vw;
+	background-color: #555
 }
