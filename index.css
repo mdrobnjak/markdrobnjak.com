@@ -1,0 +1,13 @@
+body
+{
+	background-color: black;
+	margin:auto;
+}
+
+.video
+{
+	display:block;
+	margin:auto;
+	height: 100vh;
+	width: 100vw;
+}
