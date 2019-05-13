@@ -1,3 +1,51 @@
-body{
-
+body
+{
+	background-color: black;
+	margin:auto;
 }
+
+.tracks
+{
+	position:absolute;
+	width: 100vw;
+	z-index: 5;
+}
+
+.rightMargin
+{	
+	position: fixed;
+	height: 100vh;
+	
+	transform: translateX(20%);
+	
+	bottom:0;
+	right:0;
+	z-index: 10;
+}
+
+.iMakeSongs
+{
+	
+	position: fixed;
+	max-width: 220px;
+	right: 20px;
+	top: 400px;
+	z-index: 15;
+}
+
+.home
+{
+	position:fixed;
+	max-width: 150px;
+	top: 25px;
+	right: 5px;
+	z-index: 15;
+}
+
+.header
+{
+	max-width: 750px;
+	position:absolute;
+	z-index: 1;
+}
+
