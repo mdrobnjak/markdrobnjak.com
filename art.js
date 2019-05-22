@@ -1,3 +1,5 @@
+var model;
+
 var vertexShaderText = 
 [
 'precision mediump float;',
@@ -29,9 +31,42 @@ var fragmentShaderText =
 '}'
 ].join('\n');
 
-var Init = function () {	
-	console.log('This is working');
+var Init = function () {
+	loadTextResource('/shader.vs.glsl', function (vsErr, vsText) {
+		if(vsErr) {
+			alert('Fatal error getting vertex shader (see console).');
+			console.error(vsErr);
+		} else {
+			loadTextResource('/shader.fs.glsl', function (fsErr, fsText) {
+				if (fsErr) {
+					alert('Fatal error getting fragment shader (see console).');
+					console.error(fsErr);
+				} else {
+					loadJSONResource('/art/mfdoom.json', function (modelErr, modelObj) {
+						if (modelErr) {							
+							alert('Fatal error getting model (see console).');
+							console.error(modelErr);
+						} else {
+							loadImage('/art/black-marble.jpg', function (imgErr, img) {
+								if(imgErr){
+									alert('Fatal error getting texture image (see console).');
+									console.error(imgErr);
+								}else {									
+									Run(vsText, fsText, img, modelObj);
+								}	
+							});
+						}
+					});
+				}
+			});
+		}
+	});
+};
 
+var Run = function (vertexShaderText, fragmentShaderText, image, modelObj) {	
+	console.log('This is working');
+	model = modelObj;
+	
 	var canvas = document.getElementById('game-surface');
 	var gl = canvas.getContext('webgl');
 	var mat4 = glMatrix.mat4;
@@ -97,71 +132,10 @@ var Init = function () {
 	//
 	// Create buffer
 	//
-	var boxVertices = 
-	[ // X, Y, Z           U, V
-		// Top
-		-1.0, 1.0, -1.0,   0, 0,
-		-1.0, 1.0, 1.0,    0, 1,
-		1.0, 1.0, 1.0,     1, 1,
-		1.0, 1.0, -1.0,    1, 0,
-
-		// Left
-		-1.0, 1.0, 1.0,    0, 0,
-		-1.0, -1.0, 1.0,   1, 0,
-		-1.0, -1.0, -1.0,  1, 1,
-		-1.0, 1.0, -1.0,   0, 1,
-
-		// Right
-		1.0, 1.0, 1.0,    1, 1,
-		1.0, -1.0, 1.0,   0, 1,
-		1.0, -1.0, -1.0,  0, 0,
-		1.0, 1.0, -1.0,   1, 0,
-
-		// Front
-		1.0, 1.0, 1.0,    1, 1,
-		1.0, -1.0, 1.0,    1, 0,
-		-1.0, -1.0, 1.0,    0, 0,
-		-1.0, 1.0, 1.0,    0, 1,
-
-		// Back
-		1.0, 1.0, -1.0,    0, 0,
-		1.0, -1.0, -1.0,    0, 1,
-		-1.0, -1.0, -1.0,    1, 1,
-		-1.0, 1.0, -1.0,    1, 0,
-
-		// Bottom
-		-1.0, -1.0, -1.0,   1, 1,
-		-1.0, -1.0, 1.0,    1, 0,
-		1.0, -1.0, 1.0,     0, 0,
-		1.0, -1.0, -1.0,    0, 1,
-	];
-
-	var boxIndices =
-	[
-		// Top
-		0, 1, 2,
-		0, 2, 3,
-
-		// Left
-		5, 4, 6,
-		6, 4, 7,
-
-		// Right
-		8, 9, 10,
-		8, 10, 11,
-
-		// Front
-		13, 12, 14,
-		15, 14, 12,
-
-		// Back
-		16, 17, 18,
-		16, 18, 19,
-
-		// Bottom
-		21, 20, 22,
-		22, 20, 23
-	];
+	var boxVertices = model.meshes[0].vertices;
+	var boxIndices = [].concat.apply([], model.meshes[0].faces);
+	var doomTexCoords = model.meshes[0].texturecoords[0];
+	var doomNormals = model.meshes[0].normals;
 
 	var boxVertexBufferObject = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, boxVertexBufferObject);
@@ -170,28 +144,53 @@ var Init = function () {
 	var boxIndexBufferObject = gl.createBuffer();
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, boxIndexBufferObject);
 	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(boxIndices), gl.STATIC_DRAW);
+	
+	
+	var doomTexCoordVertexBufferObject = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, doomTexCoordVertexBufferObject);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(doomTexCoords), gl.STATIC_DRAW);
+	
+	
+	var doomNormalBufferObject = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, doomNormalBufferObject);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(doomNormals), gl.STATIC_DRAW);
 
+	gl.bindBuffer(gl.ARRAY_BUFFER, boxVertexBufferObject);
 	var positionAttribLocation = gl.getAttribLocation(program, 'vertPosition');
-	var texCoordAttribLocation = gl.getAttribLocation(program, 'vertTexCoord');
 	gl.vertexAttribPointer(
 		positionAttribLocation, // Attribute location
 		3, // Number of elements per attribute
 		gl.FLOAT, // Type of elements
 		gl.FALSE,
-		5 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
+		3 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
 		0 // Offset from the beginning of a single vertex to this attribute
 	);
+	gl.enableVertexAttribArray(positionAttribLocation);
+	
+	
+	gl.bindBuffer(gl.ARRAY_BUFFER, doomTexCoordVertexBufferObject);
+	var texCoordAttribLocation = gl.getAttribLocation(program, 'vertTexCoord');
 	gl.vertexAttribPointer(
 		texCoordAttribLocation, // Attribute location
 		2, // Number of elements per attribute
 		gl.FLOAT, // Type of elements
 		gl.FALSE,
-		5 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
-		3 * Float32Array.BYTES_PER_ELEMENT // Offset from the beginning of a single vertex to this attribute
+		2 * Float32Array.BYTES_PER_ELEMENT, // Size of an individual vertex
+		0 // Offset from the beginning of a single vertex to this attribute
 	);
-
-	gl.enableVertexAttribArray(positionAttribLocation);
 	gl.enableVertexAttribArray(texCoordAttribLocation);
+	
+	
+	gl.bindBuffer(gl.ARRAY_BUFFER, doomNormalBufferObject);
+	var normalAttribLocation = gl.getAttribLocation(program, 'vertNormal');
+	gl.vertexAttribPointer(
+		normalAttribLocation,
+		3, gl.FLOAT,
+		gl.TRUE,
+		3 * Float32Array.BYTES_PER_ELEMENT,
+		0
+	);
+	gl.enableVertexAttribArray(normalAttribLocation);
 
 	//
 	// Create texture
@@ -205,7 +204,7 @@ var Init = function () {
 	gl.texImage2D(
 		gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA,
 		gl.UNSIGNED_BYTE,
-		document.getElementById('crate')
+		image
 	);
 	gl.bindTexture(gl.TEXTURE_2D, null);
 	
@@ -222,7 +221,7 @@ var Init = function () {
 	var viewMatrix = new Float32Array(16);
 	var projMatrix = new Float32Array(16);
 	mat4.identity(worldMatrix);
-	mat4.lookAt(viewMatrix, [0, 0, -8], [0, 0, 0], [0, 1, 0]);
+	mat4.lookAt(viewMatrix, [0, 0, -16], [0, 0, 0], [0, 1, 0]);
 	mat4.perspective(projMatrix, 45 * (Math.PI/180), canvas.clientWidth / canvas.clientHeight, 0.1, 1000.0);
 
 	gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
@@ -231,6 +230,19 @@ var Init = function () {
 
 	var xRotationMatrix = new Float32Array(16);
 	var yRotationMatrix = new Float32Array(16);
+	
+	//
+	// Lighting information
+	//
+	gl.useProgram(program);
+
+	var ambientUniformLocation = gl.getUniformLocation(program, 'ambientLightIntensity');
+	var sunlightDirUniformLocation = gl.getUniformLocation(program, 'sun.direction');
+	var sunlightIntUniformLocation = gl.getUniformLocation(program, 'sun.color');
+
+	gl.uniform3f(ambientUniformLocation, 0.2, 0.2, 0.2);
+	gl.uniform3f(sunlightDirUniformLocation, 3.0, 4.0, -2.0);
+	gl.uniform3f(sunlightIntUniformLocation, 0.9, 0.9, 0.9);
 
 	//
 	// Main render loop
