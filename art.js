@@ -252,8 +252,8 @@ var Run = function (vertexShaderText, fragmentShaderText, image, modelObj) {
 	var angle = 0;
 	var loop = function () {
 		angle = performance.now() / 1000 / 6 * 2 * Math.PI;
-		mat4.rotate(yRotationMatrix, identityMatrix, angle, [0, 1, 0]);
-		mat4.rotate(xRotationMatrix, identityMatrix, angle / 4, [1, 0, 0]);
+		mat4.rotate(yRotationMatrix, identityMatrix, (Math.PI) + angle, [0, 1, 0]);
+		mat4.rotate(xRotationMatrix, identityMatrix, (3 * Math.PI / 2), [1, 0, 0]);
 		mat4.mul(worldMatrix, yRotationMatrix, xRotationMatrix);
 		gl.uniformMatrix4fv(matWorldUniformLocation, gl.FALSE, worldMatrix);
 
